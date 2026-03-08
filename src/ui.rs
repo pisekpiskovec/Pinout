@@ -7,12 +7,12 @@ use crate::config::Config;
 
 #[derive(Debug)]
 pub struct UInterface {
+    bridge_address: String,
     show_settings: bool,
     status_message: Option<String>,
+    temp_bridge_address: String,
     theme: Theme,
     theme_mode: Mode,
-    bridge_address: String,
-    temp_bridge_address: String,
 }
 
 #[derive(Debug, Clone)]
@@ -51,6 +51,20 @@ impl UInterface {
         }
     }
 
+    fn save_config(&self) -> Result<(), String> {
+        let config = Config {
+            theme: crate::config::ThemeConfig {
+                mode: match self.theme_mode {
+                    Mode::Light => "Light".to_string(),
+                    Mode::Dark => "Dark".to_string(),
+                    Mode::None => String::new(),
+                },
+            },
+            bridge_address: self.bridge_address.repeat(0),
+        };
+        config.save()
+    }
+
     pub fn subscription(&self) -> iced::Subscription<Message> {
         system::theme_changes().map(Message::ThemeChanged)
     }
@@ -77,6 +91,7 @@ impl UInterface {
             }
             Message::SaveSettings => {
                 state.bridge_address = state.temp_bridge_address.trim().to_string();
+                let _ = state.save_config();
                 state.show_settings = false;
             }
             Message::SettingsBridgeChanged(addr) => {

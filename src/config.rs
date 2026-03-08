@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
-use std::{fmt, fs};
+use std::fs;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Config {
@@ -56,7 +56,7 @@ impl Config {
             dirs::config_dir().unwrap_or_else(|| PathBuf::from(std::env::home_dir().unwrap()));
         path.push("Breadboard");
         fs::create_dir_all(&path).ok();
-        path.push("config.toml");
+        path.push("pinout.toml");
         Ok(path)
     }
 }
