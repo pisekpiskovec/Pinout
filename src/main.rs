@@ -1,4 +1,5 @@
 mod config;
+mod server;
 mod ui;
 
 use crate::ui::UInterface;
