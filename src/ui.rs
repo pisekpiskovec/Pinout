@@ -1,13 +1,17 @@
+use std::time::Duration;
+
 use iced::theme::Mode;
 use iced::widget::{button, column, container, row, rule, text, text_input};
 use iced::Length::Fill;
 use iced::{system, Element, Task, Theme};
 
 use crate::config::Config;
+use crate::server::PinServer;
 
 #[derive(Debug)]
 pub struct UInterface {
     bridge_address: String,
+    server: PinServer,
     show_settings: bool,
     status_message: Option<String>,
     temp_bridge_address: String,
@@ -19,10 +23,10 @@ pub struct UInterface {
 pub enum Message {
     CloseSettings,
     OpenSettings,
+    RefreshData,
     SaveSettings,
     SettingsBridgeChanged(String),
     ThemeChanged(Mode),
-    Reconnect,
 }
 
 impl UInterface {
@@ -48,6 +52,7 @@ impl UInterface {
             status_message: None,
             bridge_address: config.bridge_address,
             temp_bridge_address: Config::load().unwrap_or_default().bridge_address,
+            server: PinServer::new(),
         }
     }
 
@@ -66,7 +71,9 @@ impl UInterface {
     }
 
     pub fn subscription(&self) -> iced::Subscription<Message> {
-        system::theme_changes().map(Message::ThemeChanged)
+        let theme_sub = system::theme_changes().map(Message::ThemeChanged);
+        let data_sub = iced::time::every(Duration::from_secs(1)).map(|_| Message::RefreshData);
+        iced::Subscription::batch(vec![theme_sub, data_sub])
     }
 
     pub fn theme(&self) -> Theme {
@@ -97,7 +104,13 @@ impl UInterface {
             Message::SettingsBridgeChanged(addr) => {
                 state.temp_bridge_address = addr;
             }
-            Message::Reconnect => {}
+            Message::RefreshData => {
+                state.server.recive_data();
+            }
+        }
+        match state.server.is_connected() {
+            true => state.status_message = Some("Connected".to_string()),
+            false => state.status_message = Some("Disconnected".to_string()),
         }
         Task::none()
     }
