@@ -65,7 +65,7 @@ impl UInterface {
                     Mode::None => String::new(),
                 },
             },
-            bridge_address: self.bridge_address.repeat(0),
+            bridge_address: self.bridge_address.clone(),
         };
         config.save()
     }
@@ -172,7 +172,7 @@ impl UInterface {
         content = content.push(
             row![
                 text("Hardware bridge address:"),
-                text_input("", &self.bridge_address).on_input(Message::SettingsBridgeChanged)
+                text_input("", &self.temp_bridge_address).on_input(Message::SettingsBridgeChanged)
             ]
             .spacing(4)
             .padding(4),
