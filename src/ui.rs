@@ -40,6 +40,8 @@ impl UInterface {
 
     pub fn new() -> Self {
         let config = Config::load().unwrap_or_default();
+        let mut server = PinServer::new();
+        server.start_server(&config.bridge_address).ok();
 
         Self {
             theme_mode: match config.theme.mode.as_str() {
@@ -52,7 +54,7 @@ impl UInterface {
             status_message: None,
             bridge_address: config.bridge_address,
             temp_bridge_address: Config::load().unwrap_or_default().bridge_address,
-            server: PinServer::new(),
+            server,
         }
     }
 
