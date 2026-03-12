@@ -1,7 +1,7 @@
 use std::time::Duration;
 
 use iced::theme::Mode;
-use iced::widget::{button, column, container, row, rule, text, text_input};
+use iced::widget::{button, column, container, row, rule, text, text_input, toggler};
 use iced::Length::Fill;
 use iced::{system, Element, Task, Theme};
 
@@ -12,6 +12,7 @@ use crate::server::PinServer;
 #[derive(Debug)]
 pub struct UInterface {
     bridge_address: String,
+    pin_reset: bool,
     pin_state: PinState,
     server: PinServer,
     show_settings: bool,
@@ -27,6 +28,7 @@ pub enum Message {
     OpenSettings,
     RefreshData,
     SaveSettings,
+    SendReset(bool),
     SettingsBridgeChanged(String),
     ThemeChanged(Mode),
 }
@@ -58,6 +60,7 @@ impl UInterface {
             temp_bridge_address: Config::load().unwrap_or_default().bridge_address,
             server,
             pin_state: PinState::new(),
+            pin_reset: false,
         }
     }
 
@@ -106,6 +109,11 @@ impl UInterface {
                 let _ = state.save_config();
                 state.show_settings = false;
             }
+            Message::SendReset(pull) => {
+                state.pin_reset = pull;
+                state.server.send_data(0xFF, if pull { 0x01 } else { 0x00 }).ok();
+                state.status_message = Some("RESET sent".to_string());
+            }
             Message::SettingsBridgeChanged(addr) => {
                 state.temp_bridge_address = addr;
             }
@@ -114,8 +122,8 @@ impl UInterface {
                     state.pin_state.update_port(addr, value);
                     state.status_message =
                         Some(format!("Recieved: port {:#04X} = {:#04X}", addr, value));
+                }
             }
-        }
         }
         Task::none()
     }
@@ -144,7 +152,53 @@ impl UInterface {
         content = content.push(toolbar);
         content = content.push(rule::horizontal(2));
 
-        let main_view = row![].height(Fill);
+        let main_view = row![
+            column![
+                text("(XCK/T0) PB0".to_string()),
+                text("(T1) PB1".to_string()),
+                text("(INT2/AIN0) PB2".to_string()),
+                text("(OC0/AIN1) PB3".to_string()),
+                text("(|SS) PB4".to_string()),
+                text("(MOSI) PB5".to_string()),
+                text("(MISO) PB6".to_string()),
+                text("(SCK) PB7".to_string()),
+                row![
+                    text("|RESET".to_string()),
+                    toggler(self.pin_reset).on_toggle(Message::SendReset),
+                ],
+                text("(RXD) PD0".to_string()),
+                text("(TXD) PD1".to_string()),
+                text("(INT0) PD2".to_string()),
+                text("(INT1) PD3".to_string()),
+                text("(OC1B) PD4".to_string()),
+                text("(OC1A) PD5".to_string()),
+                text("(ICP1) PD6".to_string()),
+            ]
+            .spacing(8)
+            .width(Fill),
+            column![
+                text("PA0 (ADC0)".to_string()),
+                text("PA1 (ADC1)".to_string()),
+                text("PA2 (ADC2)".to_string()),
+                text("PA3 (ADC3)".to_string()),
+                text("PA4 (ADC4)".to_string()),
+                text("PA5 (ADC5)".to_string()),
+                text("PA6 (ADC6)".to_string()),
+                text("PA7 (ADC7)".to_string()),
+                text("PC7 (TOSC2)".to_string()),
+                text("PC6 (TOSC1)".to_string()),
+                text("PC5 (TDI)".to_string()),
+                text("PC4 (TDO)".to_string()),
+                text("PC3 (TMS)".to_string()),
+                text("PC2 (TCK)".to_string()),
+                text("PC1 (SDA)".to_string()),
+                text("PC0 (SCL)".to_string()),
+                text("PD7 (OC2)".to_string()),
+            ]
+            .spacing(8)
+            .width(Fill)
+        ]
+        .height(Fill);
 
         content = content.push(main_view);
         content = content.push(rule::horizontal(2));
