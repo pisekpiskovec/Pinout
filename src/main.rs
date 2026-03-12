@@ -1,4 +1,5 @@
 mod config;
+mod pinstate;
 mod server;
 mod ui;
 

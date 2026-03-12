@@ -6,11 +6,13 @@ use iced::Length::Fill;
 use iced::{system, Element, Task, Theme};
 
 use crate::config::Config;
+use crate::pinstate::PinState;
 use crate::server::PinServer;
 
 #[derive(Debug)]
 pub struct UInterface {
     bridge_address: String,
+    pin_state: PinState,
     server: PinServer,
     show_settings: bool,
     status_message: Option<String>,
@@ -55,6 +57,7 @@ impl UInterface {
             bridge_address: config.bridge_address,
             temp_bridge_address: Config::load().unwrap_or_default().bridge_address,
             server,
+            pin_state: PinState::new(),
         }
     }
 
@@ -107,12 +110,12 @@ impl UInterface {
                 state.temp_bridge_address = addr;
             }
             Message::RefreshData => {
-                state.server.recive_data();
+                if let Some((addr, value)) = state.server.recive_data() {
+                    state.pin_state.update_port(addr, value);
+                    state.status_message =
+                        Some(format!("Recieved: port {:#04X} = {:#04X}", addr, value));
             }
         }
-        match state.server.is_connected() {
-            true => state.status_message = Some("Connected".to_string()),
-            false => state.status_message = Some("Disconnected".to_string()),
         }
         Task::none()
     }
@@ -152,6 +155,13 @@ impl UInterface {
         } else {
             status_bar = status_bar.push(text("").width(Fill));
         }
+        status_bar = status_bar.push(text!(
+            "Network status: {}",
+            match self.server.is_connected() {
+                true => "Connected",
+                false => "Disconnected",
+            }
+        ));
         content = content.push(status_bar);
 
         container(content).into()
