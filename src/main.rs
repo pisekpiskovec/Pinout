@@ -1,4 +1,5 @@
 mod config;
+mod gpio;
 mod pinstate;
 mod server;
 mod ui;
