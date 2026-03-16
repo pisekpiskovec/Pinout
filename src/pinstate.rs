@@ -1,7 +1,5 @@
 use std::collections::HashMap;
 
-const RESET_ADDRESS: u8 = 0xFF;
-
 #[derive(Debug)]
 pub struct PinState {
     pins: HashMap<u8, u8>,
@@ -10,10 +8,10 @@ pub struct PinState {
 impl PinState {
     pub fn new() -> Self {
         let mut pins = HashMap::new();
-        pins.insert(0x39, 0);
-        pins.insert(0x36, 0);
-        pins.insert(0x33, 0);
-        pins.insert(0x30, 0);
+        pins.insert(0x39, 0); // PinA
+        pins.insert(0x36, 0); // PinB
+        pins.insert(0x33, 0); // PinC
+        pins.insert(0x30, 0); // PinD
 
         Self { pins }
     }
