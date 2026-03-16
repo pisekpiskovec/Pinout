@@ -3,7 +3,7 @@ use std::time::Duration;
 use iced::theme::Mode;
 use iced::widget::{button, column, container, row, rule, text, text_input, toggler};
 use iced::Length::Fill;
-use iced::{system, Element, Task, Theme};
+use iced::{Element, Task, Theme, alignment, system};
 
 use crate::config::Config;
 use crate::pinstate::PinState;
@@ -195,25 +195,22 @@ impl UInterface {
 
         let main_view = row![
             column![
-                row![text("(XCK/T0) PB0".to_string()), toggler((self.pin_b >> 0) & 1 == 1).on_toggle(|_| Message::TogglePin { port: PORT_B_ADDR, bit: 0 })],
-                row![text("(T1) PB1".to_string()), toggler((self.pin_b >> 1) & 1 == 1).on_toggle(|_| Message::TogglePin { port: PORT_B_ADDR, bit: 1 })],
-                row![text("(INT2/AIN0) PB2".to_string()), toggler((self.pin_b >> 2) & 1 == 1).on_toggle(|_| Message::TogglePin { port: PORT_B_ADDR, bit: 2 })],
-                row![text("(OC0/AIN1) PB3".to_string()), toggler((self.pin_b >> 3) & 1 == 1).on_toggle(|_| Message::TogglePin { port: PORT_B_ADDR, bit: 3 })],
-                row![text("(|SS) PB4".to_string()), toggler((self.pin_b >> 4) & 1 == 1).on_toggle(|_| Message::TogglePin { port: PORT_B_ADDR, bit: 4 })],
-                row![text("(MOSI) PB5".to_string()), toggler((self.pin_b >> 5) & 1 == 1).on_toggle(|_| Message::TogglePin { port: PORT_B_ADDR, bit: 5 })],
-                row![text("(MISO) PB6".to_string()), toggler((self.pin_b >> 6) & 1 == 1).on_toggle(|_| Message::TogglePin { port: PORT_B_ADDR, bit: 6 })],
-                row![text("(SCK) PB7".to_string()), toggler((self.pin_b >> 7) & 1 == 1).on_toggle(|_| Message::TogglePin { port: PORT_B_ADDR, bit: 7 })],
-                row![
-                    text("|RESET".to_string()),
-                    toggler(self.pin_reset).on_toggle(Message::SendReset),
-                ],
-                row![text("(RXD) PD0".to_string()), toggler((self.pin_d >> 0) & 1 == 1).on_toggle(|_| Message::TogglePin { port: PORT_D_ADDR, bit: 0 })],
-                row![text("(TXD) PD1".to_string()), toggler((self.pin_d >> 1) & 1 == 1).on_toggle(|_| Message::TogglePin { port: PORT_D_ADDR, bit: 1 })],
-                row![text("(INT0) PD2".to_string()), toggler((self.pin_d >> 2) & 1 == 1).on_toggle(|_| Message::TogglePin { port: PORT_D_ADDR, bit: 2 })],
-                row![text("(INT1) PD3".to_string()), toggler((self.pin_d >> 3) & 1 == 1).on_toggle(|_| Message::TogglePin { port: PORT_D_ADDR, bit: 3 })],
-                row![text("(OC1B) PD4".to_string()), toggler((self.pin_d >> 4) & 1 == 1).on_toggle(|_| Message::TogglePin { port: PORT_D_ADDR, bit: 4 })],
-                row![text("(OC1A) PD5".to_string()), toggler((self.pin_d >> 5) & 1 == 1).on_toggle(|_| Message::TogglePin { port: PORT_D_ADDR, bit: 5 })],
-                row![text("(ICP1) PD6".to_string()), toggler((self.pin_d >> 6) & 1 == 1).on_toggle(|_| Message::TogglePin { port: PORT_D_ADDR, bit: 6 })],
+                row![text("(XCK/T0) PB0".to_string()).width(Fill).align_x(alignment::Horizontal::Right), toggler((self.pin_b >> 0) & 1 == 1).on_toggle(|_| Message::TogglePin { port: PORT_B_ADDR, bit: 0 })],
+                row![text("(T1) PB1".to_string()).width(Fill).align_x(alignment::Horizontal::Right), toggler((self.pin_b >> 1) & 1 == 1).on_toggle(|_| Message::TogglePin { port: PORT_B_ADDR, bit: 1 })],
+                row![text("(INT2/AIN0) PB2".to_string()).width(Fill).align_x(alignment::Horizontal::Right), toggler((self.pin_b >> 2) & 1 == 1).on_toggle(|_| Message::TogglePin { port: PORT_B_ADDR, bit: 2 })],
+                row![text("(OC0/AIN1) PB3".to_string()).width(Fill).align_x(alignment::Horizontal::Right), toggler((self.pin_b >> 3) & 1 == 1).on_toggle(|_| Message::TogglePin { port: PORT_B_ADDR, bit: 3 })],
+                row![text("(|SS) PB4".to_string()).width(Fill).align_x(alignment::Horizontal::Right), toggler((self.pin_b >> 4) & 1 == 1).on_toggle(|_| Message::TogglePin { port: PORT_B_ADDR, bit: 4 })],
+                row![text("(MOSI) PB5".to_string()).width(Fill).align_x(alignment::Horizontal::Right), toggler((self.pin_b >> 5) & 1 == 1).on_toggle(|_| Message::TogglePin { port: PORT_B_ADDR, bit: 5 })],
+                row![text("(MISO) PB6".to_string()).width(Fill).align_x(alignment::Horizontal::Right), toggler((self.pin_b >> 6) & 1 == 1).on_toggle(|_| Message::TogglePin { port: PORT_B_ADDR, bit: 6 })],
+                row![text("(SCK) PB7".to_string()).width(Fill).align_x(alignment::Horizontal::Right), toggler((self.pin_b >> 7) & 1 == 1).on_toggle(|_| Message::TogglePin { port: PORT_B_ADDR, bit: 7 })],
+                row![text("|RESET".to_string()).width(Fill).align_x(alignment::Horizontal::Right), toggler(self.pin_reset).on_toggle(Message::SendReset)],
+                row![text("(RXD) PD0".to_string()).width(Fill).align_x(alignment::Horizontal::Right), toggler((self.pin_d >> 0) & 1 == 1).on_toggle(|_| Message::TogglePin { port: PORT_D_ADDR, bit: 0 })],
+                row![text("(TXD) PD1".to_string()).width(Fill).align_x(alignment::Horizontal::Right), toggler((self.pin_d >> 1) & 1 == 1).on_toggle(|_| Message::TogglePin { port: PORT_D_ADDR, bit: 1 })],
+                row![text("(INT0) PD2".to_string()).width(Fill).align_x(alignment::Horizontal::Right), toggler((self.pin_d >> 2) & 1 == 1).on_toggle(|_| Message::TogglePin { port: PORT_D_ADDR, bit: 2 })],
+                row![text("(INT1) PD3".to_string()).width(Fill).align_x(alignment::Horizontal::Right), toggler((self.pin_d >> 3) & 1 == 1).on_toggle(|_| Message::TogglePin { port: PORT_D_ADDR, bit: 3 })],
+                row![text("(OC1B) PD4".to_string()).width(Fill).align_x(alignment::Horizontal::Right), toggler((self.pin_d >> 4) & 1 == 1).on_toggle(|_| Message::TogglePin { port: PORT_D_ADDR, bit: 4 })],
+                row![text("(OC1A) PD5".to_string()).width(Fill).align_x(alignment::Horizontal::Right), toggler((self.pin_d >> 5) & 1 == 1).on_toggle(|_| Message::TogglePin { port: PORT_D_ADDR, bit: 5 })],
+                row![text("(ICP1) PD6".to_string()).width(Fill).align_x(alignment::Horizontal::Right), toggler((self.pin_d >> 6) & 1 == 1).on_toggle(|_| Message::TogglePin { port: PORT_D_ADDR, bit: 6 })],
             ]
             .spacing(8)
             .width(Fill),
