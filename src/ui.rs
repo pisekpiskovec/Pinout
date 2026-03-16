@@ -9,10 +9,19 @@ use crate::config::Config;
 use crate::pinstate::PinState;
 use crate::server::PinServer;
 
+const PORT_A_ADDR: u8 = 0x39;
+const PORT_B_ADDR: u8 = 0x36;
+const PORT_C_ADDR: u8 = 0x33;
+const PORT_D_ADDR: u8 = 0x30;
+
 #[derive(Debug)]
 pub struct UInterface {
     bridge_address: String,
     pin_reset: bool,
+    pin_a: u8,
+    pin_b: u8,
+    pin_c: u8,
+    pin_d: u8,
     pin_state: PinState,
     server: PinServer,
     show_settings: bool,
@@ -31,6 +40,7 @@ pub enum Message {
     SendReset(bool),
     SettingsBridgeChanged(String),
     ThemeChanged(Mode),
+    TogglePin { port: u8, bit: u8 },
 }
 
 impl UInterface {
@@ -61,6 +71,10 @@ impl UInterface {
             server,
             pin_state: PinState::new(),
             pin_reset: false,
+            pin_a: 0,
+            pin_b: 0,
+            pin_c: 0,
+            pin_d: 0,
         }
     }
 
@@ -111,7 +125,10 @@ impl UInterface {
             }
             Message::SendReset(pull) => {
                 state.pin_reset = pull;
-                state.server.send_data(0xFF, if pull { 0x01 } else { 0x00 }).ok();
+                state
+                    .server
+                    .send_data(0xFF, if pull { 0x01 } else { 0x00 })
+                    .ok();
                 state.status_message = Some("RESET sent".to_string());
             }
             Message::SettingsBridgeChanged(addr) => {
@@ -123,6 +140,30 @@ impl UInterface {
                     state.status_message =
                         Some(format!("Recieved: port {:#04X} = {:#04X}", addr, value));
                 }
+            }
+            Message::TogglePin { port, bit } => {
+                let new_value = match port {
+                    PORT_A_ADDR => {
+                        state.pin_a = Self::toggle_bit(state.pin_a, bit);
+                        state.pin_a
+                    }
+                    PORT_B_ADDR => {
+                        state.pin_b = Self::toggle_bit(state.pin_b, bit);
+                        state.pin_b
+                    }
+                    PORT_C_ADDR => {
+                        state.pin_c = Self::toggle_bit(state.pin_c, bit);
+                        state.pin_c
+                    }
+                    PORT_D_ADDR => {
+                        state.pin_d = Self::toggle_bit(state.pin_d, bit);
+                        state.pin_d
+                    }
+                    _ => {
+                        return Task::none();
+                    }
+                };
+                state.server.send_data(port, new_value).ok();
             }
         }
         Task::none()
@@ -154,46 +195,46 @@ impl UInterface {
 
         let main_view = row![
             column![
-                text("(XCK/T0) PB0".to_string()),
-                text("(T1) PB1".to_string()),
-                text("(INT2/AIN0) PB2".to_string()),
-                text("(OC0/AIN1) PB3".to_string()),
-                text("(|SS) PB4".to_string()),
-                text("(MOSI) PB5".to_string()),
-                text("(MISO) PB6".to_string()),
-                text("(SCK) PB7".to_string()),
+                row![text("(XCK/T0) PB0".to_string()), toggler((self.pin_b >> 0) & 1 == 1).on_toggle(|_| Message::TogglePin { port: PORT_B_ADDR, bit: 0 })],
+                row![text("(T1) PB1".to_string()), toggler((self.pin_b >> 1) & 1 == 1).on_toggle(|_| Message::TogglePin { port: PORT_B_ADDR, bit: 1 })],
+                row![text("(INT2/AIN0) PB2".to_string()), toggler((self.pin_b >> 2) & 1 == 1).on_toggle(|_| Message::TogglePin { port: PORT_B_ADDR, bit: 2 })],
+                row![text("(OC0/AIN1) PB3".to_string()), toggler((self.pin_b >> 3) & 1 == 1).on_toggle(|_| Message::TogglePin { port: PORT_B_ADDR, bit: 3 })],
+                row![text("(|SS) PB4".to_string()), toggler((self.pin_b >> 4) & 1 == 1).on_toggle(|_| Message::TogglePin { port: PORT_B_ADDR, bit: 4 })],
+                row![text("(MOSI) PB5".to_string()), toggler((self.pin_b >> 5) & 1 == 1).on_toggle(|_| Message::TogglePin { port: PORT_B_ADDR, bit: 5 })],
+                row![text("(MISO) PB6".to_string()), toggler((self.pin_b >> 6) & 1 == 1).on_toggle(|_| Message::TogglePin { port: PORT_B_ADDR, bit: 6 })],
+                row![text("(SCK) PB7".to_string()), toggler((self.pin_b >> 7) & 1 == 1).on_toggle(|_| Message::TogglePin { port: PORT_B_ADDR, bit: 7 })],
                 row![
                     text("|RESET".to_string()),
                     toggler(self.pin_reset).on_toggle(Message::SendReset),
                 ],
-                text("(RXD) PD0".to_string()),
-                text("(TXD) PD1".to_string()),
-                text("(INT0) PD2".to_string()),
-                text("(INT1) PD3".to_string()),
-                text("(OC1B) PD4".to_string()),
-                text("(OC1A) PD5".to_string()),
-                text("(ICP1) PD6".to_string()),
+                row![text("(RXD) PD0".to_string()), toggler((self.pin_d >> 0) & 1 == 1).on_toggle(|_| Message::TogglePin { port: PORT_D_ADDR, bit: 0 })],
+                row![text("(TXD) PD1".to_string()), toggler((self.pin_d >> 1) & 1 == 1).on_toggle(|_| Message::TogglePin { port: PORT_D_ADDR, bit: 1 })],
+                row![text("(INT0) PD2".to_string()), toggler((self.pin_d >> 2) & 1 == 1).on_toggle(|_| Message::TogglePin { port: PORT_D_ADDR, bit: 2 })],
+                row![text("(INT1) PD3".to_string()), toggler((self.pin_d >> 3) & 1 == 1).on_toggle(|_| Message::TogglePin { port: PORT_D_ADDR, bit: 3 })],
+                row![text("(OC1B) PD4".to_string()), toggler((self.pin_d >> 4) & 1 == 1).on_toggle(|_| Message::TogglePin { port: PORT_D_ADDR, bit: 4 })],
+                row![text("(OC1A) PD5".to_string()), toggler((self.pin_d >> 5) & 1 == 1).on_toggle(|_| Message::TogglePin { port: PORT_D_ADDR, bit: 5 })],
+                row![text("(ICP1) PD6".to_string()), toggler((self.pin_d >> 6) & 1 == 1).on_toggle(|_| Message::TogglePin { port: PORT_D_ADDR, bit: 6 })],
             ]
             .spacing(8)
             .width(Fill),
             column![
-                text("PA0 (ADC0)".to_string()),
-                text("PA1 (ADC1)".to_string()),
-                text("PA2 (ADC2)".to_string()),
-                text("PA3 (ADC3)".to_string()),
-                text("PA4 (ADC4)".to_string()),
-                text("PA5 (ADC5)".to_string()),
-                text("PA6 (ADC6)".to_string()),
-                text("PA7 (ADC7)".to_string()),
-                text("PC7 (TOSC2)".to_string()),
-                text("PC6 (TOSC1)".to_string()),
-                text("PC5 (TDI)".to_string()),
-                text("PC4 (TDO)".to_string()),
-                text("PC3 (TMS)".to_string()),
-                text("PC2 (TCK)".to_string()),
-                text("PC1 (SDA)".to_string()),
-                text("PC0 (SCL)".to_string()),
-                text("PD7 (OC2)".to_string()),
+                row![toggler((self.pin_a >> 0) & 1 == 1).on_toggle(|_| Message::TogglePin { port: PORT_A_ADDR, bit: 0 }), text("PA0 (ADC0)".to_string()),],
+                row![toggler((self.pin_a >> 1) & 1 == 1).on_toggle(|_| Message::TogglePin { port: PORT_A_ADDR, bit: 1 }), text("PA1 (ADC1)".to_string()),],
+                row![toggler((self.pin_a >> 2) & 1 == 1).on_toggle(|_| Message::TogglePin { port: PORT_A_ADDR, bit: 2 }), text("PA2 (ADC2)".to_string()),],
+                row![toggler((self.pin_a >> 3) & 1 == 1).on_toggle(|_| Message::TogglePin { port: PORT_A_ADDR, bit: 3 }), text("PA3 (ADC3)".to_string()),],
+                row![toggler((self.pin_a >> 4) & 1 == 1).on_toggle(|_| Message::TogglePin { port: PORT_A_ADDR, bit: 4 }), text("PA4 (ADC4)".to_string()),],
+                row![toggler((self.pin_a >> 5) & 1 == 1).on_toggle(|_| Message::TogglePin { port: PORT_A_ADDR, bit: 5 }), text("PA5 (ADC5)".to_string()),],
+                row![toggler((self.pin_a >> 6) & 1 == 1).on_toggle(|_| Message::TogglePin { port: PORT_A_ADDR, bit: 6 }), text("PA6 (ADC6)".to_string()),],
+                row![toggler((self.pin_a >> 7) & 1 == 1).on_toggle(|_| Message::TogglePin { port: PORT_A_ADDR, bit: 7 }), text("PA7 (ADC7)".to_string()),],
+                row![toggler((self.pin_c >> 7) & 1 == 1).on_toggle(|_| Message::TogglePin { port: PORT_C_ADDR, bit: 7 }), text("PC7 (TOSC2)".to_string())],
+                row![toggler((self.pin_c >> 6) & 1 == 1).on_toggle(|_| Message::TogglePin { port: PORT_C_ADDR, bit: 6 }), text("PC6 (TOSC1)".to_string())],
+                row![toggler((self.pin_c >> 5) & 1 == 1).on_toggle(|_| Message::TogglePin { port: PORT_C_ADDR, bit: 5 }), text("PC5 (TDI)".to_string())],
+                row![toggler((self.pin_c >> 4) & 1 == 1).on_toggle(|_| Message::TogglePin { port: PORT_C_ADDR, bit: 4 }), text("PC4 (TDO)".to_string())],
+                row![toggler((self.pin_c >> 3) & 1 == 1).on_toggle(|_| Message::TogglePin { port: PORT_C_ADDR, bit: 3 }), text("PC3 (TMS)".to_string())],
+                row![toggler((self.pin_c >> 2) & 1 == 1).on_toggle(|_| Message::TogglePin { port: PORT_C_ADDR, bit: 2 }), text("PC2 (TCK)".to_string())],
+                row![toggler((self.pin_c >> 1) & 1 == 1).on_toggle(|_| Message::TogglePin { port: PORT_C_ADDR, bit: 1 }), text("PC1 (SDA)".to_string())],
+                row![toggler((self.pin_c >> 0) & 1 == 1).on_toggle(|_| Message::TogglePin { port: PORT_C_ADDR, bit: 0 }), text("PC0 (SCL)".to_string())],
+                row![toggler((self.pin_d >> 7) & 1 == 1).on_toggle(|_| Message::TogglePin { port: PORT_D_ADDR, bit: 7 }), text("PD7 (OC2)".to_string())],
             ]
             .spacing(8)
             .width(Fill)
@@ -244,5 +285,9 @@ impl UInterface {
             .padding(4),
         );
         container(content).into()
+    }
+
+    fn toggle_bit(value: u8, bit: u8) -> u8 {
+        value ^ (1 << bit)
     }
 }
