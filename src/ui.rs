@@ -137,6 +137,16 @@ impl UInterface {
             Message::RefreshData => {
                 if let Some((addr, value)) = state.server.recive_data() {
                     state.pin_state.update_port(addr, value);
+
+                    // Update toggle states to match Breadboard
+                    match addr {
+                        PORT_A_ADDR => state.pin_a = value,
+                        PORT_B_ADDR => state.pin_b = value,
+                        PORT_C_ADDR => state.pin_c = value,
+                        PORT_D_ADDR => state.pin_d = value,
+                        _ => {}
+                    }
+                    
                     state.status_message =
                         Some(format!("Recieved: port {:#04X} = {:#04X}", addr, value));
                 }
