@@ -1,11 +1,12 @@
 use std::time::Duration;
 
 use iced::theme::Mode;
-use iced::widget::{button, column, container, row, rule, text, text_input, toggler};
+use iced::widget::{button, column, container, row, rule, scrollable, text, text_input, toggler};
 use iced::Length::Fill;
 use iced::{Element, Task, Theme, alignment, system};
 
 use crate::config::Config;
+use crate::gpio::PinGPIO;
 use crate::pinstate::PinState;
 use crate::server::PinServer;
 
@@ -17,11 +18,13 @@ const PORT_D_ADDR: u8 = 0x30;
 #[derive(Debug)]
 pub struct UInterface {
     bridge_address: String,
+    gpio_manager: Option<PinGPIO>,
     pin_reset: bool,
     pin_a: u8,
     pin_b: u8,
     pin_c: u8,
     pin_d: u8,
+    pin_directions: [bool; 8], // true = output, false = input
     pin_state: PinState,
     server: PinServer,
     show_settings: bool,
@@ -38,6 +41,7 @@ pub enum Message {
     RefreshData,
     SaveSettings,
     SendReset(bool),
+    SetPinDirection { pin: u8, is_output: bool },
     SettingsBridgeChanged(String),
     ThemeChanged(Mode),
     TogglePin { port: u8, bit: u8 },
@@ -75,6 +79,8 @@ impl UInterface {
             pin_b: 0,
             pin_c: 0,
             pin_d: 0,
+            gpio_manager: PinGPIO::new().ok(),
+            pin_directions: [true; 8],
         }
     }
 
@@ -146,7 +152,7 @@ impl UInterface {
                         PORT_D_ADDR => state.pin_d = value,
                         _ => {}
                     }
-                    
+        
                     state.status_message =
                         Some(format!("Recieved: port {:#04X} = {:#04X}", addr, value));
                 }
@@ -175,6 +181,7 @@ impl UInterface {
                 };
                 state.server.send_data(port, new_value).ok();
             }
+            Message::SetPinDirection { pin, is_output } => todo!(),
         }
         Task::none()
     }
@@ -199,11 +206,18 @@ impl UInterface {
 
         content = content.push(rule::horizontal(2));
 
-        let toolbar = row![].spacing(8).padding(4);
-        content = content.push(toolbar);
-        content = content.push(rule::horizontal(2));
+        let gpio_ctrl = column![scrollable(column![
+            row![text("Pin 0 Input "), toggler(self.pin_directions[0]).on_toggle(|o| Message::SetPinDirection { pin: 0, is_output: o }), text(" Output")],
+            row![text("Pin 1 Input "), toggler(self.pin_directions[1]).on_toggle(|o| Message::SetPinDirection { pin: 1, is_output: o }), text(" Output")],
+            row![text("Pin 2 Input "), toggler(self.pin_directions[2]).on_toggle(|o| Message::SetPinDirection { pin: 2, is_output: o }), text(" Output")],
+            row![text("Pin 3 Input "), toggler(self.pin_directions[3]).on_toggle(|o| Message::SetPinDirection { pin: 3, is_output: o }), text(" Output")],
+            row![text("Pin 4 Input "), toggler(self.pin_directions[4]).on_toggle(|o| Message::SetPinDirection { pin: 4, is_output: o }), text(" Output")],
+            row![text("Pin 5 Input "), toggler(self.pin_directions[5]).on_toggle(|o| Message::SetPinDirection { pin: 5, is_output: o }), text(" Output")],
+            row![text("Pin 6 Input "), toggler(self.pin_directions[6]).on_toggle(|o| Message::SetPinDirection { pin: 6, is_output: o }), text(" Output")],
+            row![text("Pin 7 Input "), toggler(self.pin_directions[7]).on_toggle(|o| Message::SetPinDirection { pin: 7, is_output: o }), text(" Output")],
+        ])].spacing(8).padding(4);
 
-        let main_view = row![
+        let pins = row![
             column![
                 row![text("(XCK/T0) PB0".to_string()).width(Fill).align_x(alignment::Horizontal::Right), toggler((self.pin_b >> 0) & 1 == 1).on_toggle(|_| Message::TogglePin { port: PORT_B_ADDR, bit: 0 })],
                 row![text("(T1) PB1".to_string()).width(Fill).align_x(alignment::Horizontal::Right), toggler((self.pin_b >> 1) & 1 == 1).on_toggle(|_| Message::TogglePin { port: PORT_B_ADDR, bit: 1 })],
@@ -245,8 +259,13 @@ impl UInterface {
             ]
             .spacing(8)
             .width(Fill)
-        ]
-        .height(Fill);
+        ];
+        
+        let main_view = row![
+          gpio_ctrl,
+          rule::vertical(2),
+          pins,
+        ].height(Fill);
 
         content = content.push(main_view);
         content = content.push(rule::horizontal(2));

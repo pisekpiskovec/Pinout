@@ -1,6 +1,7 @@
 use rppal::gpio::{Gpio, InputPin, Level, OutputPin};
 use std::collections::HashMap;
 
+#[derive(Debug)]
 pub struct PinGPIO {
     gpio: Gpio,
     output_pins: HashMap<u8, OutputPin>, // AVR pin number -> GPIO output
