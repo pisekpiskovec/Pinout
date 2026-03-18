@@ -219,6 +219,7 @@ impl UInterface {
         content = content.push(rule::horizontal(2));
 
         let gpio_ctrl = column![scrollable(column![
+            text("Configure GPIO pins as"),
             row![text("Pin 0 Input "), toggler(self.pin_directions[0]).on_toggle(|o| Message::SetPinDirection { pin: 0, is_output: o }), text(" Output")],
             row![text("Pin 1 Input "), toggler(self.pin_directions[1]).on_toggle(|o| Message::SetPinDirection { pin: 1, is_output: o }), text(" Output")],
             row![text("Pin 2 Input "), toggler(self.pin_directions[2]).on_toggle(|o| Message::SetPinDirection { pin: 2, is_output: o }), text(" Output")],
