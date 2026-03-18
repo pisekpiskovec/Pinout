@@ -38,6 +38,7 @@ pub struct UInterface {
 pub enum Message {
     CloseSettings,
     OpenSettings,
+    PollGPIO,
     RefreshData,
     SaveSettings,
     SendReset(bool),
@@ -101,7 +102,8 @@ impl UInterface {
     pub fn subscription(&self) -> iced::Subscription<Message> {
         let theme_sub = system::theme_changes().map(Message::ThemeChanged);
         let data_sub = iced::time::every(Duration::from_secs(1)).map(|_| Message::RefreshData);
-        iced::Subscription::batch(vec![theme_sub, data_sub])
+        let gpio_poll_sub = iced::time::every(Duration::from_millis(50)).map(|_| Message::PollGPIO);
+        iced::Subscription::batch(vec![theme_sub, data_sub, gpio_poll_sub])
     }
 
     pub fn theme(&self) -> Theme {
@@ -194,6 +196,22 @@ impl UInterface {
                     }
                 }
             },
+            Message::PollGPIO => {
+                if let Some(ref mut gpio) = state.gpio_manager {
+                    let mut gpio_states: u8 = 0;
+                    for idx in 0..8 {
+                        let bit_value = match gpio.read_pin(idx as u8) {
+                            Some(true) => 1,
+                            Some(false) => 0,
+                            None => 0,
+                        };
+                        gpio_states |= bit_value << idx;
+                    }
+                    if state.pin_a != gpio_states {
+                        state.server.send_data(PORT_A_ADDR, gpio_states).ok();
+                    }
+                }
+            }
         }
         Task::none()
     }
