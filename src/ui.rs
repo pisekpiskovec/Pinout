@@ -146,13 +146,16 @@ impl UInterface {
 
                     // Update toggle states to match Breadboard
                     match addr {
-                        PORT_A_ADDR => state.pin_a = value,
+                        PORT_A_ADDR => {
+                            state.pin_a = value;
+                            Self::update_gpio_port(state, state.pin_a);
+                        },
                         PORT_B_ADDR => state.pin_b = value,
                         PORT_C_ADDR => state.pin_c = value,
                         PORT_D_ADDR => state.pin_d = value,
                         _ => {}
                     }
-        
+
                     state.status_message =
                         Some(format!("Recieved: port {:#04X} = {:#04X}", addr, value));
                 }
@@ -180,8 +183,17 @@ impl UInterface {
                     }
                 };
                 state.server.send_data(port, new_value).ok();
+                Self::update_gpio_port(state, new_value);
             }
-            Message::SetPinDirection { pin, is_output } => todo!(),
+            Message::SetPinDirection { pin, is_output } => {
+                state.pin_directions[pin as usize] = is_output;
+
+                if let Some(ref mut gpio) = state.gpio_manager {
+                    if let Err(e) = gpio.set_pin_direction(pin, is_output) {
+                        state.status_message = Some(format!("GPIO error: {}", e));
+                    }
+                }
+            },
         }
         Task::none()
     }
@@ -315,5 +327,14 @@ impl UInterface {
 
     fn toggle_bit(value: u8, bit: u8) -> u8 {
         value ^ (1 << bit)
+    }
+
+    fn update_gpio_port(&mut self, port_value: u8) {
+        if let Some(ref mut gpio) = self.gpio_manager {
+            for pin in 0..8 {
+                let is_high = (port_value >> pin) & 1 == 1;
+                gpio.write_pin(pin, is_high).ok();
+            }
+        }
     }
 }
