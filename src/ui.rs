@@ -137,6 +137,7 @@ impl UInterface {
                     .server
                     .send_data(0xFF, if pull { 0x01 } else { 0x00 })
                     .ok();
+                state.server.send_data(PORT_A_ADDR, state.pin_a).ok();
                 state.status_message = Some("RESET sent".to_string());
             }
             Message::SettingsBridgeChanged(addr) => {
