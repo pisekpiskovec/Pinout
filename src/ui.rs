@@ -197,7 +197,7 @@ impl UInterface {
                 }
             },
             Message::PollGPIO => {
-                if let Some(ref mut gpio) = state.gpio_manager {
+                if let Some(ref gpio) = state.gpio_manager {
                     let mut gpio_states: u8 = 0;
                     for idx in 0..8 {
                         let bit_value = match gpio.read_pin(idx as u8) {
@@ -207,8 +207,10 @@ impl UInterface {
                         };
                         gpio_states |= bit_value << idx;
                     }
-                    if state.pin_a != gpio_states {
-                        state.server.send_data(PORT_A_ADDR, gpio_states).ok();
+                    let combined = (gpio_states & !Self::pin_directions_to_bitmask(state)) | (state.pin_a & Self::pin_directions_to_bitmask(state));
+                    if state.pin_a != combined {
+                        state.pin_a = combined;
+                        state.server.send_data(PORT_A_ADDR, combined).ok();
                     }
                 }
             }
@@ -355,5 +357,17 @@ impl UInterface {
                 gpio.write_pin(pin, is_high).ok();
             }
         }
+    }
+
+    fn pin_directions_to_bitmask(&self) -> u8 {
+        let mut mask: u8 = 0;
+        for idx in 0..8 {
+            let bit_value = match self.pin_directions[idx] {
+                true => 1,
+                false => 0,
+            };
+            mask |= bit_value << idx;
+        }
+        mask
     }
 }
