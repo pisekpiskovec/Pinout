@@ -101,7 +101,7 @@ impl UInterface {
 
     pub fn subscription(&self) -> iced::Subscription<Message> {
         let theme_sub = system::theme_changes().map(Message::ThemeChanged);
-        let data_sub = iced::time::every(Duration::from_secs(1)).map(|_| Message::RefreshData);
+        let data_sub = iced::time::every(Duration::from_millis(50)).map(|_| Message::RefreshData);
         let gpio_poll_sub = iced::time::every(Duration::from_millis(50)).map(|_| Message::PollGPIO);
         iced::Subscription::batch(vec![theme_sub, data_sub, gpio_poll_sub])
     }
