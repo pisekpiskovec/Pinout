@@ -1,5 +1,6 @@
 use std::io::{Read, Write};
 use std::net::{TcpListener, TcpStream};
+use Wire::{Message, CMD_REQUEST, CMD_RESET, CMD_RESPONSE, CMD_WRITE, PROTOCOL_VERSION};
 
 #[derive(Debug)]
 pub struct PinServer {
@@ -40,9 +41,26 @@ impl PinServer {
         }
 
         if let Some(ref mut stream) = self.client {
-            let mut buf = [0u8; 2];
+            let mut buf = [0u8; 4];
             match stream.read_exact(&mut buf) {
-                Ok(_) => Some((buf[0], buf[1])),
+                Ok(_) => {
+                    let data = Message::from_bytes(buf);
+
+                    // Protocol version check
+                    if data.version != Wire::PROTOCOL_VERSION {
+                        return None;
+                    }
+
+                    // Command parsing
+                    match data.command {
+                        CMD_WRITE => Some((data.address, data.value)),
+                        CMD_REQUEST => {
+                            // TODO: Send response with current pin state
+                            None
+                        }
+                        _ => None,
+                    }
+                }
                 Err(ref e) if e.kind() == std::io::ErrorKind::WouldBlock => None,
                 Err(_) => {
                     self.client = None;
@@ -56,7 +74,16 @@ impl PinServer {
 
     pub fn send_data(&mut self, port: u8, value: u8) -> Result<(), String> {
         if let Some(ref mut stream) = self.client {
-            stream.write_all(&[port, value]).map_err(|e| format!("Send failed: {}", e))
+            let data = Message {
+                version: PROTOCOL_VERSION,
+                command: CMD_WRITE,
+                address: port,
+                value,
+            }
+            .to_bytes();
+            stream
+                .write_all(&data)
+                .map_err(|e| format!("Send failed: {}", e))
         } else {
             Err("Not connected".to_string())
         }

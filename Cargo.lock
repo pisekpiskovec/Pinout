@@ -6,6 +6,7 @@ version = 4
 name = "Pinout"
 version = "0.2.0"
 dependencies = [
+ "Wire",
  "dirs",
  "iced",
  "rppal",
@@ -13,6 +14,11 @@ dependencies = [
  "smol",
  "toml",
 ]
+
+[[package]]
+name = "Wire"
+version = "0.1.0"
+source = "git+https://github.com/PisekPiskovec/Wire.git?branch=master#7e1d0a8e814b1ae92f06d08e5b4a656a7355586e"
 
 [[package]]
 name = "ab_glyph"
