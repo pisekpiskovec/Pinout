@@ -1,6 +1,9 @@
 use std::io::{Read, Write};
 use std::net::{TcpListener, TcpStream};
-use Wire::{Message, CMD_REQUEST, CMD_RESET, CMD_RESPONSE, CMD_WRITE, PROTOCOL_VERSION};
+use Wire::{
+    Message, CMD_REQUEST, CMD_RESET, CMD_RESPONSE, CMD_WRITE, PORT_A_ADDR, PORT_B_ADDR,
+    PORT_C_ADDR, PORT_D_ADDR, PROTOCOL_VERSION,
+};
 
 #[derive(Debug)]
 pub struct PinServer {
@@ -26,7 +29,7 @@ impl PinServer {
     }
 
     #[allow(clippy::collapsible_if)]
-    pub fn recive_data(&mut self) -> Option<(u8, u8)> {
+    pub fn recive_data(&mut self, pin_states: &[u8; 4]) -> Option<(u8, u8)> {
         if self.client.is_none() {
             if let Some(ref listener) = self.listener {
                 match listener.accept() {
@@ -55,7 +58,23 @@ impl PinServer {
                     match data.command {
                         CMD_WRITE => Some((data.address, data.value)),
                         CMD_REQUEST => {
-                            // TODO: Send response with current pin state
+                            let value = match data.address {
+                                PORT_A_ADDR => pin_states[0],
+                                PORT_B_ADDR => pin_states[1],
+                                PORT_C_ADDR => pin_states[2],
+                                PORT_D_ADDR => pin_states[3],
+                                _ => 0,
+                            };
+
+                            // Send response immediately
+                            let response = Message {
+                                version: PROTOCOL_VERSION,
+                                command: CMD_RESPONSE,
+                                address: data.address,
+                                value,
+                            }
+                            .to_bytes();
+                            stream.write_all(&response).ok();
                             None
                         }
                         _ => None,

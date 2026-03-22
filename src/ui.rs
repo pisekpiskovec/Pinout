@@ -144,7 +144,8 @@ impl UInterface {
                 state.temp_bridge_address = addr;
             }
             Message::RefreshData => {
-                if let Some((addr, value)) = state.server.recive_data() {
+                let pin_states = [state.pin_a, state.pin_b, state.pin_c, state.pin_d];
+                if let Some((addr, value)) = state.server.recive_data(&pin_states) {
                     state.pin_state.update_port(addr, value);
 
                     // Update toggle states to match Breadboard
