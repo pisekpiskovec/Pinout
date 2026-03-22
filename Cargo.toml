@@ -10,4 +10,4 @@ toml = "0.8"
 dirs = "5.0"
 smol = "2"
 rppal = "0.18" # GPIO library for RPi
-Wire = { git = "https://github.com/PisekPiskovec/Wire.git", branch = "master"}
+wire = { git = "https://github.com/PisekPiskovec/Wire.git", tag = "v2"}

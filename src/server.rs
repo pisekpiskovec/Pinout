@@ -1,6 +1,6 @@
 use std::io::{Read, Write};
 use std::net::{TcpListener, TcpStream};
-use Wire::{
+use wire::{
     Message, CMD_REQUEST, CMD_RESET, CMD_RESPONSE, CMD_WRITE, PORT_A_ADDR, PORT_B_ADDR,
     PORT_C_ADDR, PORT_D_ADDR, PROTOCOL_VERSION,
 };
@@ -50,7 +50,7 @@ impl PinServer {
                     let data = Message::from_bytes(buf);
 
                     // Protocol version check
-                    if data.version != Wire::PROTOCOL_VERSION {
+                    if data.version != PROTOCOL_VERSION {
                         return None;
                     }
 

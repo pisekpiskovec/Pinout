@@ -6,19 +6,14 @@ version = 4
 name = "Pinout"
 version = "0.2.0"
 dependencies = [
- "Wire",
  "dirs",
  "iced",
  "rppal",
  "serde",
  "smol",
  "toml",
+ "wire",
 ]
-
-[[package]]
-name = "Wire"
-version = "0.1.0"
-source = "git+https://github.com/PisekPiskovec/Wire.git?branch=master#7e1d0a8e814b1ae92f06d08e5b4a656a7355586e"
 
 [[package]]
 name = "ab_glyph"
@@ -4048,6 +4043,11 @@ checksum = "5a5364e9d77fcdeeaa6062ced926ee3381faa2ee02d3eb83a5c27a8825540829"
 dependencies = [
  "memchr",
 ]
+
+[[package]]
+name = "wire"
+version = "2.0.1"
+source = "git+https://github.com/PisekPiskovec/Wire.git?tag=v2#143e1e7e7fddc0d8805679d278f74ba36c1d0062"
 
 [[package]]
 name = "wit-bindgen"
