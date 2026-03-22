@@ -24,6 +24,7 @@ impl PinServer {
         Ok(())
     }
 
+    #[allow(clippy::collapsible_if)]
     pub fn recive_data(&mut self) -> Option<(u8, u8)> {
         if self.client.is_none() {
             if let Some(ref listener) = self.listener {
