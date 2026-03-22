@@ -75,9 +75,7 @@ impl PinServer {
                                     value,
                                 }
                                 .to_bytes();
-                                if stream.write_all(&response).is_ok() {
-                                    stream.flush().ok();
-                                }
+                                stream.write_all(&response).ok();
                             }
                             _ => {}
                         }
