@@ -44,46 +44,47 @@ impl PinServer {
         }
 
         if let Some(ref mut stream) = self.client {
-            let mut buf = [0u8; 4];
-            match stream.read_exact(&mut buf) {
-                Ok(_) => {
-                    let data = Message::from_bytes(buf);
+            loop {
+                let mut buf = [0u8; 4];
+                match stream.read_exact(&mut buf) {
+                    Ok(_) => {
+                        let data = Message::from_bytes(buf);
 
-                    // Protocol version check
-                    if data.version != Wire::PROTOCOL_VERSION {
+                        // Protocol version check
+                        if data.version != Wire::PROTOCOL_VERSION {
+                            continue;
+                        }
+
+                        // Command parsing
+                        match data.command {
+                            CMD_WRITE => return Some((data.address, data.value)),
+                            CMD_REQUEST => {
+                                let value = match data.address {
+                                    PORT_A_ADDR => pin_states[0],
+                                    PORT_B_ADDR => pin_states[1],
+                                    PORT_C_ADDR => pin_states[2],
+                                    PORT_D_ADDR => pin_states[3],
+                                    _ => 0,
+                                };
+
+                                // Send response immediately
+                                let response = Message {
+                                    version: PROTOCOL_VERSION,
+                                    command: CMD_RESPONSE,
+                                    address: data.address,
+                                    value,
+                                }
+                                .to_bytes();
+                                stream.write_all(&response).ok();
+                            }
+                            _ => {}
+                        }
+                    }
+                    Err(ref e) if e.kind() == std::io::ErrorKind::WouldBlock => return None,
+                    Err(_) => {
+                        self.client = None;
                         return None;
                     }
-
-                    // Command parsing
-                    match data.command {
-                        CMD_WRITE => Some((data.address, data.value)),
-                        CMD_REQUEST => {
-                            let value = match data.address {
-                                PORT_A_ADDR => pin_states[0],
-                                PORT_B_ADDR => pin_states[1],
-                                PORT_C_ADDR => pin_states[2],
-                                PORT_D_ADDR => pin_states[3],
-                                _ => 0,
-                            };
-
-                            // Send response immediately
-                            let response = Message {
-                                version: PROTOCOL_VERSION,
-                                command: CMD_RESPONSE,
-                                address: data.address,
-                                value,
-                            }
-                            .to_bytes();
-                            stream.write_all(&response).ok();
-                            None
-                        }
-                        _ => None,
-                    }
-                }
-                Err(ref e) if e.kind() == std::io::ErrorKind::WouldBlock => None,
-                Err(_) => {
-                    self.client = None;
-                    None
                 }
             }
         } else {
