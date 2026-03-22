@@ -95,7 +95,7 @@ impl PinServer {
         if let Some(ref mut stream) = self.client {
             let data = Message {
                 version: PROTOCOL_VERSION,
-                command: CMD_WRITE,
+                command: if port == 0xFF { CMD_RESET } else { CMD_WRITE },
                 address: port,
                 value,
             }
